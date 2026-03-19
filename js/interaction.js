@@ -25,6 +25,34 @@ export function initInteraction(floors, campusFloors, outdoors, onSelect) {
   canvas.addEventListener('click', onClick);
   canvas.addEventListener('mousemove', onMouseMove);
   canvas.addEventListener('mouseleave', onMouseLeave);
+
+  // Touch support — tap to select floors on mobile/tablet
+  let touchStartPos = null;
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, { passive: true });
+
+  canvas.addEventListener('touchend', (e) => {
+    if (!touchStartPos || e.changedTouches.length !== 1) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartPos.x;
+    const dy = touch.clientY - touchStartPos.y;
+    // Only treat as tap if finger didn't move much (not a drag/pinch)
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+      updateMouse(touch);
+      raycaster.setFromCamera(mouse, getCamera());
+      const intersects = raycaster.intersectObjects(getAllClickable());
+      if (intersects.length > 0) {
+        const hit = intersects[0].object;
+        if (hit.userData.type === 'floor' || hit.userData.type === 'outdoor') {
+          selectFloor(hit);
+        }
+      }
+    }
+    touchStartPos = null;
+  }, { passive: true });
 }
 
 function getAllClickable() {
