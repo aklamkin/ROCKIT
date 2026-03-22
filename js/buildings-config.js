@@ -127,11 +127,11 @@ export const BUILDING_LOCATIONS = {
   },
 };
 
-// Default campus view
+// Default campus view — close-in 3D perspective of Rockefeller Center
 export const CAMPUS_VIEW = {
-  center: [-73.9793, 40.7590],
-  zoom: 16,
-  pitch: 55,
+  center: [-73.9793, 40.7588],
+  zoom: 17,
+  pitch: 60,
   bearing: -30,
 };
 

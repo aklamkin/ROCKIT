@@ -18,7 +18,7 @@ export function initMap(containerId) {
     pitch: CAMPUS_VIEW.pitch,
     bearing: CAMPUS_VIEW.bearing,
     canvasContextAttributes: { antialias: true },
-    maxPitch: 70,
+    maxPitch: 85,
     minZoom: 14,
     maxZoom: 20,
   });
@@ -32,9 +32,19 @@ export function initMap(containerId) {
   map.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }), 'bottom-left');
 
   return new Promise((resolve) => {
-    map.on('style.load', () => {
+    map.on('load', () => {
       add3DBuildingLayer();
       addHighlightLayer();
+
+      // Force the 3D camera position after everything loads
+      // (some styles reset pitch/bearing on load)
+      map.jumpTo({
+        center: CAMPUS_VIEW.center,
+        zoom: CAMPUS_VIEW.zoom,
+        pitch: CAMPUS_VIEW.pitch,
+        bearing: CAMPUS_VIEW.bearing,
+      });
+
       resolve(map);
     });
   });
