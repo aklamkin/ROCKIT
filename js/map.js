@@ -54,7 +54,11 @@ export function initMap(containerId) {
  * Add the 3D building extrusion layer from OSM data.
  */
 function add3DBuildingLayer() {
-  // Find the first label layer so buildings render below labels
+  // Remove the existing flat 2D building layers from the style
+  if (map.getLayer('building-top')) map.removeLayer('building-top');
+  if (map.getLayer('building')) map.removeLayer('building');
+
+  // Find the first label/symbol layer so 3D buildings render below text
   const layers = map.getStyle().layers;
   let labelLayerId;
   for (const layer of layers) {
@@ -64,35 +68,35 @@ function add3DBuildingLayer() {
     }
   }
 
+  // Source is "openmaptiles" (NOT "openfreemap") per the bright style spec
   map.addLayer({
     id: '3d-buildings',
-    source: 'openfreemap',
+    source: 'openmaptiles',
     'source-layer': 'building',
     type: 'fill-extrusion',
     minzoom: 14,
-    filter: ['!=', ['get', 'hide_3d'], true],
     paint: {
       'fill-extrusion-color': [
         'interpolate', ['linear'],
         ['get', 'render_height'],
-        0, '#d4cfc0',      // short buildings — warm limestone
-        50, '#c8bfa8',     // medium
-        150, '#b8b0a0',    // taller
-        260, '#a8a098',    // 30 Rock height — slightly cooler
+        0, '#d4cfc0',
+        50, '#c8bfa8',
+        150, '#b8b0a0',
+        260, '#a8a098',
       ],
       'fill-extrusion-height': [
         'interpolate', ['linear'],
         ['zoom'],
         14, 0,
-        15, ['get', 'render_height'],
+        15.5, ['get', 'render_height'],
       ],
       'fill-extrusion-base': [
         'interpolate', ['linear'],
         ['zoom'],
         14, 0,
-        15, ['get', 'render_min_height'],
+        15.5, ['get', 'render_min_height'],
       ],
-      'fill-extrusion-opacity': 0.88,
+      'fill-extrusion-opacity': 0.9,
     },
   }, labelLayerId);
 }
@@ -106,7 +110,7 @@ function addHighlightLayer() {
   // When a building is selected, we update the filter.
   map.addLayer({
     id: 'building-highlight',
-    source: 'openfreemap',
+    source: 'openmaptiles',
     'source-layer': 'building',
     type: 'fill-extrusion',
     minzoom: 14,
