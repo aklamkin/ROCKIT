@@ -1,7 +1,5 @@
-import { initScene, resetCameraView } from './scene.js';
-import { createBuilding, setBasementsVisible } from './building.js';
-import { createCampus } from './campus.js';
-import { initInteraction, selectFloorById } from './interaction.js';
+import { initMap, resetView } from './map.js';
+import { initInteraction, selectBuildingById } from './interaction.js';
 import { initData, resetData } from './data.js';
 import { initUI, selectFloorInUI } from './ui.js';
 
@@ -10,22 +8,17 @@ function isMobile() {
 }
 
 async function main() {
-  // Initialize data first (includes v2 migration for campus floors)
+  // Initialize data first
   await initData();
 
-  // Initialize 3D scene
-  const container = document.getElementById('canvas-container');
-  const { scene } = initScene(container);
+  // Initialize MapLibre GL map
+  await initMap('map');
 
-  // Build the 3D model of 30 Rock
-  const { floorMeshes, outdoorMeshes } = createBuilding(scene);
-
-  // Build the surrounding Rockefeller Center campus (now with per-floor meshes)
-  const { campusFloorMeshes } = createCampus(scene);
-
-  // Basements hidden by default
-  let basementsVisible = false;
-  setBasementsVisible(floorMeshes, basementsVisible);
+  // Initialize interaction (click/hover on map buildings)
+  initInteraction((buildingId, floorId) => {
+    selectFloorInUI(floorId, { buildingId });
+    showPanel();
+  });
 
   const panelToggle = document.getElementById('panel-toggle');
   const sidePanel = document.getElementById('side-panel');
@@ -46,34 +39,21 @@ async function main() {
     }
   }
 
-  // Initialize interaction (raycasting, selection) — now includes campus floors
-  initInteraction(floorMeshes, campusFloorMeshes, outdoorMeshes, (floorId, floorData) => {
-    selectFloorInUI(floorId, floorData);
-    showPanel();
-  });
-
-  // Initialize UI
-  initUI((floorId) => {
-    // If basement floor selected from strip, show basements
-    if (floorId.startsWith('B') && !floorId.includes('-') && !basementsVisible) {
-      basementsVisible = true;
-      setBasementsVisible(floorMeshes, true);
-      btnBasements.classList.add('active');
+  // Initialize UI with callbacks
+  initUI(
+    // Floor selected from strip
+    (floorId) => {
+      showPanel();
+    },
+    // Building tab clicked — fly to building on map
+    (buildingId) => {
+      selectBuildingById(buildingId);
     }
-    selectFloorById(floorId);
-    showPanel();
-  });
+  );
 
   // Header controls
-  const btnBasements = document.getElementById('btn-basements');
-  btnBasements.addEventListener('click', () => {
-    basementsVisible = !basementsVisible;
-    setBasementsVisible(floorMeshes, basementsVisible);
-    btnBasements.classList.toggle('active', basementsVisible);
-  });
-
   document.getElementById('btn-reset-view').addEventListener('click', () => {
-    resetCameraView();
+    resetView();
   });
 
   document.getElementById('btn-reset-data').addEventListener('click', async () => {
@@ -83,17 +63,13 @@ async function main() {
     }
   });
 
-  // Panel toggle — works differently on mobile vs desktop
+  // Panel toggle
   panelToggle.addEventListener('click', () => {
     if (isMobile()) {
       const isOpen = sidePanel.classList.contains('panel-open');
-      if (isOpen) {
-        hidePanel();
-      } else {
-        showPanel();
-      }
+      if (isOpen) hidePanel();
+      else showPanel();
     } else {
-      // Desktop: slide panel off-screen
       sidePanel.classList.toggle('collapsed');
       panelToggle.classList.toggle('collapsed-toggle');
       panelToggle.innerHTML = sidePanel.classList.contains('collapsed') ? '&#9654;' : '&#9664;';
