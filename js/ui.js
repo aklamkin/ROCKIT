@@ -46,11 +46,9 @@ let state = {
 };
 
 let onFloorSelectFromStrip = null;
-let onBuildingTabClick = null;
 
-export function initUI(floorSelectCallback, buildingTabCallback) {
+export function initUI(floorSelectCallback) {
   onFloorSelectFromStrip = floorSelectCallback;
-  onBuildingTabClick = buildingTabCallback;
   renderStrip();
   renderPanel();
 }
@@ -100,8 +98,7 @@ function renderStrip() {
     tab.addEventListener('click', () => {
       state.selectedBuildingId = bldg.id;
       renderStrip();
-      // Fly to building on the map
-      if (onBuildingTabClick) onBuildingTabClick(bldg.id);
+      // Don't change selected floor — just update which floors are shown
     });
     tabsRow.appendChild(tab);
   }
