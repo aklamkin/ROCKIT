@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'rockefeller-data';
 const DATA_VERSION_KEY = 'rockefeller-data-version';
-const CURRENT_VERSION = 2; // v2 = campus building floors
+const CURRENT_VERSION = 3; // v3 = accurate campus layout + new buildings
 
 let db = null;
 
@@ -21,8 +21,8 @@ export async function initData() {
     db = await resp.json();
   }
 
-  // v2 migration: generate floors for campus buildings
-  if (version < 2) {
+  // v2/v3 migration: generate floors for campus buildings (including new ones in v3)
+  if (version < 3) {
     ensureCampusFloors();
     generateCampusSampleAssets();
     localStorage.setItem(DATA_VERSION_KEY, String(CURRENT_VERSION));
@@ -46,17 +46,20 @@ export function resetData() {
 // Campus floor generation (v2 migration)
 // ==========================================
 const CAMPUS_FLOOR_CONFIGS = {
-  INTL:    { totalFloors: 41, baseSqft: 50400 },
-  BRIT:    { totalFloors: 6,  baseSqft: 28000 },
-  MAISON:  { totalFloors: 6,  baseSqft: 28000 },
-  '1270AVE': { totalFloors: 31, baseSqft: 41600 },
-  '1250AVE': { totalFloors: 26, baseSqft: 36000 },
-  RCMH:    { totalFloors: 3,  baseSqft: 39600 },
-  '1ROCK': { totalFloors: 36, baseSqft: 38400 },
-  '10ROCK': { totalFloors: 16, baseSqft: 25200 },
-  '50ROCK': { totalFloors: 16, baseSqft: 32000 },
-  '75ROCK': { totalFloors: 33, baseSqft: 28000 },
-  '1230AVE': { totalFloors: 20, baseSqft: 30800 },
+  INTL:       { totalFloors: 41, baseSqft: 50400 },
+  PALAZZO:    { totalFloors: 6,  baseSqft: 22000 },
+  INTL_N:     { totalFloors: 6,  baseSqft: 22000 },
+  BRIT:       { totalFloors: 6,  baseSqft: 28000 },
+  MAISON:     { totalFloors: 6,  baseSqft: 28000 },
+  '1270AVE':  { totalFloors: 31, baseSqft: 41600 },
+  '1250AVE':  { totalFloors: 16, baseSqft: 36000 },
+  RCMH:       { totalFloors: 3,  baseSqft: 39600 },
+  '1ROCK':    { totalFloors: 36, baseSqft: 38400 },
+  '10ROCK':   { totalFloors: 16, baseSqft: 25200 },
+  '50ROCK':   { totalFloors: 15, baseSqft: 32000 },
+  '75ROCK':   { totalFloors: 33, baseSqft: 28000 },
+  '1230AVE':  { totalFloors: 21, baseSqft: 30800 },
+  '600FIFTH': { totalFloors: 27, baseSqft: 26000 },
 };
 
 function ordinal(n) {
@@ -107,6 +110,8 @@ function generateCampusSampleAssets() {
   // Add a handful of sample assets for major campus buildings
   const sampleBuildings = [
     { id: 'INTL', prefix: 'INTL', floors: [0, 1, 5, 10, 20, 30, 40] },
+    { id: 'PALAZZO', prefix: 'PAL', floors: [0, 2, 4] },
+    { id: 'INTL_N', prefix: 'IN', floors: [0, 2, 4] },
     { id: '1ROCK', prefix: '1R', floors: [0, 1, 5, 10, 20, 30] },
     { id: '1270AVE', prefix: '1270', floors: [0, 1, 5, 10, 20] },
     { id: '1250AVE', prefix: '1250', floors: [0, 1, 5, 10] },
@@ -117,6 +122,7 @@ function generateCampusSampleAssets() {
     { id: 'MAISON', prefix: 'LMF', floors: [0, 2, 4] },
     { id: 'RCMH', prefix: 'RCMH', floors: [0, 1] },
     { id: '1230AVE', prefix: '1230', floors: [0, 5, 10] },
+    { id: '600FIFTH', prefix: '600', floors: [0, 5, 10, 20] },
   ];
 
   const assetTemplates = [

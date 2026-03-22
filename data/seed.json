@@ -49,7 +49,7 @@
       "id": "1250AVE",
       "name": "1250 Avenue of the Americas",
       "address": "1250 Avenue of the Americas, New York, NY 10020",
-      "totalFloors": 26,
+      "totalFloors": 16,
       "builtYear": 1970,
       "architect": "Harrison & Abramovitz",
       "style": "International"
@@ -85,7 +85,7 @@
       "id": "50ROCK",
       "name": "50 Rockefeller Plaza",
       "address": "50 Rockefeller Plaza, New York, NY 10020",
-      "totalFloors": 16,
+      "totalFloors": 15,
       "builtYear": 1947,
       "architect": "Carson & Lundin",
       "style": "Art Deco"
@@ -98,6 +98,42 @@
       "builtYear": 1947,
       "architect": "Harrison & Abramovitz",
       "style": "International"
+    },
+    {
+      "id": "1230AVE",
+      "name": "1230 Avenue of the Americas",
+      "address": "1230 Avenue of the Americas, New York, NY 10020",
+      "totalFloors": 21,
+      "builtYear": 1939,
+      "architect": "Raymond Hood",
+      "style": "Art Deco"
+    },
+    {
+      "id": "PALAZZO",
+      "name": "Palazzo d'Italia",
+      "address": "626 Fifth Avenue, New York, NY 10020",
+      "totalFloors": 6,
+      "builtYear": 1935,
+      "architect": "Raymond Hood",
+      "style": "Art Deco"
+    },
+    {
+      "id": "INTL_N",
+      "name": "International Building North",
+      "address": "636 Fifth Avenue, New York, NY 10020",
+      "totalFloors": 6,
+      "builtYear": 1935,
+      "architect": "Raymond Hood",
+      "style": "Art Deco"
+    },
+    {
+      "id": "600FIFTH",
+      "name": "600 Fifth Avenue",
+      "address": "600 Fifth Avenue, New York, NY 10020",
+      "totalFloors": 27,
+      "builtYear": 1952,
+      "architect": "Carson & Lundin",
+      "style": "Art Deco"
     },
     {
       "id": "OUTDOOR",

@@ -11,14 +11,16 @@ const strip = document.getElementById('floor-strip');
 
 // All buildings with their display order for tabs
 const BUILDING_TAB_ORDER = [
-  '30ROCK', 'INTL', '1ROCK', '1270AVE', '1250AVE', '75ROCK',
-  '10ROCK', '50ROCK', 'BRIT', 'MAISON', 'RCMH', '1230AVE',
+  '30ROCK', 'INTL', 'PALAZZO', 'INTL_N', '1ROCK', '1270AVE', '1250AVE',
+  '75ROCK', '10ROCK', '50ROCK', 'BRIT', 'MAISON', 'RCMH', '1230AVE', '600FIFTH',
 ];
 
 // Short display names for building tabs
 const BUILDING_SHORT_NAMES = {
   '30ROCK': '30 Rock',
   'INTL': 'International',
+  'PALAZZO': "Palazzo d'Italia",
+  'INTL_N': 'Intl North',
   'BRIT': 'British Empire',
   'MAISON': 'La Maison',
   '1270AVE': '1270 Ave',
@@ -29,6 +31,7 @@ const BUILDING_SHORT_NAMES = {
   '50ROCK': '50 Rock',
   '75ROCK': '75 Rock',
   '1230AVE': '1230 Ave',
+  '600FIFTH': '600 Fifth',
 };
 
 let state = {

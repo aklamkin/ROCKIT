@@ -1,22 +1,57 @@
 import * as THREE from 'three';
 
-// 30 Rock setback tiers (Art Deco stepped silhouette)
-// Real building is ~850ft, 70 floors. 1 unit ≈ 10ft. Floor height = 1.2 units.
-const FLOOR_HEIGHT = 1.2;
-const LOBBY_HEIGHT = 2.4;
+// ============================================================
+// 30 Rockefeller Plaza — accurate to real dimensions
+// ============================================================
+// Real building: 850ft (259m) tall, 70 above-ground floors + 3 basements
+// Lot: 200×670ft (61×204m). Base: 200×535ft (61×163m).
+// Tower slab: 103×327ft (31×100m) — narrow face (31m) faces east/west.
+// Building is oriented with its long axis running north-south.
+//
+// Scale: 1 unit = 1 meter
+// Floor height: ~3.66m (≈12ft) for typical office floors
+// Lobby: ~7.3m (≈24ft double height)
+// Total height to roof: ~259m
+//
+// Coordinate system (matching campus.js):
+//   X axis = east-west (positive = east, toward 5th Ave)
+//   Z axis = north-south (positive = north)
+//   Y axis = up
+//
+// 30 Rock sits on the block between 49th (south) and 50th (north) streets,
+// roughly centered east-west between Rockefeller Plaza and 6th Ave.
+// The tower is offset to the EAST side of the base.
+// ============================================================
 
+const FLOOR_H = 3.66;    // Standard floor height in meters
+const LOBBY_H = 7.3;     // Double-height lobby
+const BASEMENT_H = 4.0;  // Basement floor height
+
+// The tower narrows via setbacks as it rises — Art Deco stepping.
+// Dimensions are [width(E-W), depth(N-S)] in meters.
+// The base extends west to include the 1250 Ave / studio wing.
 const TIERS = [
-  { label: 'basement',  startFloor: -3, endFloor: -1, width: 42, depth: 26 },
-  { label: 'podium',    startFloor: 0,  endFloor: 6,  width: 42, depth: 26 },
-  { label: 'lower',     startFloor: 7,  endFloor: 16, width: 38, depth: 22 },
-  { label: 'mid-lower', startFloor: 17, endFloor: 30, width: 34, depth: 18 },
-  { label: 'mid',       startFloor: 31, endFloor: 45, width: 28, depth: 15 },
-  { label: 'upper-mid', startFloor: 46, endFloor: 55, width: 22, depth: 12 },
-  { label: 'upper',     startFloor: 56, endFloor: 65, width: 17, depth: 10 },
-  { label: 'crown',     startFloor: 66, endFloor: 70, width: 13, depth: 8 },
+  // Basements — full lot footprint
+  { label: 'basement',  startFloor: -3, endFloor: -1, width: 61, depth: 163 },
+  // Base / podium — includes the full base block
+  { label: 'podium',    startFloor: 0,  endFloor: 6,  width: 61, depth: 163 },
+  // First setback
+  { label: 'lower',     startFloor: 7,  endFloor: 16, width: 50, depth: 120 },
+  // Second setback
+  { label: 'mid-lower', startFloor: 17, endFloor: 30, width: 40, depth: 100 },
+  // Tower slab emerges
+  { label: 'mid',       startFloor: 31, endFloor: 45, width: 31, depth: 100 },
+  // Upper tower narrows slightly
+  { label: 'upper-mid', startFloor: 46, endFloor: 55, width: 28, depth: 80 },
+  // Upper floors
+  { label: 'upper',     startFloor: 56, endFloor: 65, width: 24, depth: 60 },
+  // Crown / top floors (Rainbow Room level)
+  { label: 'crown',     startFloor: 66, endFloor: 70, width: 20, depth: 45 },
 ];
 
-// Materials
+// ============================================================
+// Textures
+// ============================================================
 function createWindowTexture(width, height) {
   const canvas = document.createElement('canvas');
   const size = 256;
@@ -24,11 +59,11 @@ function createWindowTexture(width, height) {
   canvas.height = size;
   const ctx = canvas.getContext('2d');
 
-  // Limestone base
+  // Limestone base color — warm buff/gray
   ctx.fillStyle = '#C8B99A';
   ctx.fillRect(0, 0, size, size);
 
-  // Window grid (Art Deco: tall narrow windows, vertical emphasis)
+  // Window grid — Art Deco vertical emphasis
   const cols = 8;
   const rows = 3;
   const windowWidth = size / cols * 0.55;
@@ -42,39 +77,45 @@ function createWindowTexture(width, height) {
       const x = c * gapX + (gapX - windowWidth) / 2;
       const y = r * gapY + (gapY - windowHeight) / 2;
       ctx.fillRect(x, y, windowWidth, windowHeight);
-      // Subtle window reflection
+      // Subtle reflection highlight
       ctx.fillStyle = 'rgba(100,140,180,0.15)';
       ctx.fillRect(x + 1, y + 1, windowWidth * 0.4, windowHeight * 0.3);
       ctx.fillStyle = '#1a2233';
     }
   }
 
-  // Vertical ribs
+  // Vertical ribs between windows (limestone piers)
   ctx.fillStyle = '#B8A88A';
   for (let c = 0; c <= cols; c++) {
     ctx.fillRect(c * gapX - 1.5, 0, 3, size);
   }
 
+  // Horizontal spandrels
+  ctx.fillStyle = '#B0A080';
+  for (let r = 0; r <= rows; r++) {
+    ctx.fillRect(0, r * gapY - 1, size, 2);
+  }
+
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(width / 5, height / (FLOOR_HEIGHT * 3));
+  tex.repeat.set(width / 8, height / (FLOOR_H * 3));
   return tex;
 }
 
 function createFloorMaterial(floorNum, tierWidth, tierDepth) {
   if (floorNum === 0) {
-    // Lobby - darker granite
+    // Lobby — polished dark granite
     return new THREE.MeshStandardMaterial({
-      color: 0x5A5A64,
-      roughness: 0.4,
+      color: 0x4A4A54,
+      roughness: 0.3,
       metalness: 0.2,
     });
   }
   if (floorNum < 0) {
-    // Basement
+    // Basement — concrete
     return new THREE.MeshStandardMaterial({
-      color: 0x444450,
+      color: 0x3A3A44,
       roughness: 0.8,
       metalness: 0.0,
       transparent: true,
@@ -82,14 +123,17 @@ function createFloorMaterial(floorNum, tierWidth, tierDepth) {
     });
   }
 
-  const tex = createWindowTexture(tierWidth, FLOOR_HEIGHT);
+  const tex = createWindowTexture(tierWidth, FLOOR_H);
   return new THREE.MeshStandardMaterial({
     map: tex,
-    roughness: 0.6,
+    roughness: 0.55,
     metalness: 0.05,
   });
 }
 
+// ============================================================
+// Selection materials (shared with campus)
+// ============================================================
 const selectedMaterial = new THREE.MeshStandardMaterial({
   color: 0x00AAFF,
   emissive: 0x00AAFF,
@@ -109,31 +153,46 @@ const hoverMaterial = new THREE.MeshStandardMaterial({
 export function getSelectedMaterial() { return selectedMaterial; }
 export function getHoverMaterial() { return hoverMaterial; }
 
+// ============================================================
+// Build 30 Rock
+// ============================================================
 export function createBuilding(scene) {
   const buildingGroup = new THREE.Group();
-  const floorMeshes = []; // All clickable floor meshes
-  const outdoorMeshes = []; // Outdoor area meshes
+  const floorMeshes = [];
+  const outdoorMeshes = [];
 
-  // Build floor meshes per tier
+  // The tower slab is offset east within the base.
+  // Base center is at x=0. Tower is shifted east by ~15m.
+  const towerOffsetX = 10; // east offset for the tower portion
+
   for (const tier of TIERS) {
     for (let f = tier.startFloor; f <= tier.endFloor; f++) {
       const isLobby = f === 0;
-      const h = isLobby ? LOBBY_HEIGHT : FLOOR_HEIGHT;
+      const isBasement = f < 0;
+      const h = isLobby ? LOBBY_H : (isBasement ? BASEMENT_H : FLOOR_H);
       const geo = new THREE.BoxGeometry(tier.width, h, tier.depth);
       const mat = createFloorMaterial(f, tier.width, tier.depth);
 
       const mesh = new THREE.Mesh(geo, mat);
 
-      // Calculate Y position
+      // Y position — stack from ground
       let y;
       if (f < 0) {
-        y = f * FLOOR_HEIGHT + h / 2;
+        y = f * BASEMENT_H + BASEMENT_H / 2;
       } else if (f === 0) {
-        y = LOBBY_HEIGHT / 2;
+        y = LOBBY_H / 2;
       } else {
-        y = LOBBY_HEIGHT + (f - 1) * FLOOR_HEIGHT + FLOOR_HEIGHT + h / 2;
+        y = LOBBY_H + (f - 1) * FLOOR_H + FLOOR_H / 2;
       }
       mesh.position.y = y;
+
+      // X offset: upper tiers shift east toward the tower slab position
+      if (tier.startFloor >= 17) {
+        mesh.position.x = towerOffsetX;
+      } else if (tier.startFloor >= 7) {
+        mesh.position.x = towerOffsetX * 0.5;
+      }
+
       mesh.castShadow = true;
       mesh.receiveShadow = true;
 
@@ -151,11 +210,11 @@ export function createBuilding(scene) {
     }
   }
 
-  // Observation deck (floor 71)
-  const obsWidth = 11;
-  const obsDepth = 7;
-  const obsHeight = FLOOR_HEIGHT * 1.5;
-  const topFloorY = LOBBY_HEIGHT + 69 * FLOOR_HEIGHT + FLOOR_HEIGHT;
+  // ── Observation Deck (Top of the Rock) ──
+  const obsWidth = 18;
+  const obsDepth = 35;
+  const obsHeight = FLOOR_H * 1.5;
+  const topFloorY = LOBBY_H + 69 * FLOOR_H + FLOOR_H;
   const obsY = topFloorY + obsHeight / 2;
 
   const obsGeo = new THREE.BoxGeometry(obsWidth, obsHeight, obsDepth);
@@ -167,7 +226,7 @@ export function createBuilding(scene) {
     opacity: 0.7,
   });
   const obsMesh = new THREE.Mesh(obsGeo, obsMat);
-  obsMesh.position.y = obsY;
+  obsMesh.position.set(towerOffsetX, obsY, 0);
   obsMesh.castShadow = true;
   obsMesh.userData = {
     type: 'floor',
@@ -180,104 +239,137 @@ export function createBuilding(scene) {
   floorMeshes.push(obsMesh);
   buildingGroup.add(obsMesh);
 
-  // Observation deck railings
+  // Railings around observation deck
   const railMat = new THREE.MeshStandardMaterial({ color: 0x888899, roughness: 0.5, metalness: 0.6 });
-  const railH = 1.0;
+  const railH = 1.2;
   const railThick = 0.15;
   const railTop = obsY + obsHeight / 2 + railH / 2;
 
-  // Front & back rails
   for (const zSign of [-1, 1]) {
     const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(obsWidth + 0.5, railH, railThick),
-      railMat
+      new THREE.BoxGeometry(obsWidth + 0.5, railH, railThick), railMat
     );
-    rail.position.set(0, railTop, zSign * (obsDepth / 2 + railThick / 2));
+    rail.position.set(towerOffsetX, railTop, zSign * (obsDepth / 2 + railThick / 2));
     buildingGroup.add(rail);
   }
-  // Side rails
   for (const xSign of [-1, 1]) {
     const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(railThick, railH, obsDepth + 0.5),
-      railMat
+      new THREE.BoxGeometry(railThick, railH, obsDepth + 0.5), railMat
     );
-    rail.position.set(xSign * (obsWidth / 2 + railThick / 2), railTop, 0);
+    rail.position.set(towerOffsetX + xSign * (obsWidth / 2 + railThick / 2), railTop, 0);
     buildingGroup.add(rail);
   }
 
-  // Mechanical penthouse on top
-  const penthouseGeo = new THREE.BoxGeometry(6, 2, 4);
-  const penthouseMat = new THREE.MeshStandardMaterial({ color: 0x666677, roughness: 0.8 });
+  // Mechanical penthouse
+  const penthouseGeo = new THREE.BoxGeometry(8, 4, 12);
+  const penthouseMat = new THREE.MeshStandardMaterial({ color: 0x555566, roughness: 0.8 });
   const penthouse = new THREE.Mesh(penthouseGeo, penthouseMat);
-  penthouse.position.y = obsY + obsHeight / 2 + railH + 1;
+  penthouse.position.set(towerOffsetX, obsY + obsHeight / 2 + railH + 2, 0);
   penthouse.castShadow = true;
   buildingGroup.add(penthouse);
 
-  // === Outdoor Areas ===
+  // ── Art Deco crown details ──
+  // Vertical fin/piers at the top corners
+  const finMat = new THREE.MeshStandardMaterial({ color: 0xA09070, roughness: 0.4, metalness: 0.3 });
+  const finH = 8;
+  for (const xSign of [-1, 1]) {
+    for (const zSign of [-1, 1]) {
+      const fin = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, finH, 1.2), finMat
+      );
+      fin.position.set(
+        towerOffsetX + xSign * (20 / 2 - 0.6),
+        topFloorY + finH / 2,
+        zSign * (45 / 2 - 0.6)
+      );
+      buildingGroup.add(fin);
+    }
+  }
 
-  // Sunken skating rink (Lower Plaza - in front of building)
+  // ══════════════════════════════════════
+  // Outdoor Areas
+  // ══════════════════════════════════════
+
+  // ── Sunken Lower Plaza with Skating Rink ──
+  // 122×59ft = ~37×18m, located east of 30 Rock, below street level
   const rinkGroup = new THREE.Group();
-  const rinkRadius = 8;
-  const rinkGeo = new THREE.CircleGeometry(rinkRadius, 32);
-  const rinkMat = new THREE.MeshStandardMaterial({
+
+  // Sunken floor
+  const rinkFloorGeo = new THREE.BoxGeometry(40, 0.5, 22);
+  const rinkFloorMat = new THREE.MeshStandardMaterial({ color: 0x2a2a35, roughness: 0.7 });
+  const rinkFloor = new THREE.Mesh(rinkFloorGeo, rinkFloorMat);
+  rinkFloor.position.set(0, -2.5, 0);
+  rinkFloor.receiveShadow = true;
+  rinkGroup.add(rinkFloor);
+
+  // Ice surface
+  const iceGeo = new THREE.PlaneGeometry(37, 18);
+  const iceMat = new THREE.MeshStandardMaterial({
     color: 0xB8E8F0,
-    roughness: 0.1,
+    roughness: 0.05,
     metalness: 0.3,
   });
-  const rink = new THREE.Mesh(rinkGeo, rinkMat);
-  rink.rotation.x = -Math.PI / 2;
-  rink.position.set(0, -0.8, 22);
-  rink.receiveShadow = true;
-  rinkGroup.add(rink);
+  const ice = new THREE.Mesh(iceGeo, iceMat);
+  ice.rotation.x = -Math.PI / 2;
+  ice.position.set(0, -2.2, 0);
+  ice.receiveShadow = true;
+  rinkGroup.add(ice);
 
-  // Rink surround wall
-  const wallGeo = new THREE.TorusGeometry(rinkRadius + 0.3, 0.4, 8, 32);
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.7 });
-  const rinkWall = new THREE.Mesh(wallGeo, wallMat);
-  rinkWall.rotation.x = -Math.PI / 2;
-  rinkWall.position.set(0, -0.4, 22);
-  rinkGroup.add(rinkWall);
+  // Retaining walls around sunken plaza
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x666666, roughness: 0.6 });
+  for (const xSign of [-1, 1]) {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3, 22), wallMat);
+    wall.position.set(xSign * 20, -1, 0);
+    rinkGroup.add(wall);
+  }
+  for (const zSign of [-1, 1]) {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(40, 3, 0.5), wallMat);
+    wall.position.set(0, -1, zSign * 11);
+    rinkGroup.add(wall);
+  }
 
-  // Prometheus statue (golden sphere on pedestal)
-  const pedestalGeo = new THREE.CylinderGeometry(0.5, 0.7, 1.5, 8);
-  const pedestalMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.5 });
+  // Prometheus statue — gold figure on the west wall of the rink
+  const pedestalGeo = new THREE.CylinderGeometry(1.0, 1.2, 2.5, 8);
+  const pedestalMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.4 });
   const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
-  pedestal.position.set(0, 0.35, 14);
+  pedestal.position.set(0, -0.75, -10);
   rinkGroup.add(pedestal);
 
-  const statueGeo = new THREE.SphereGeometry(0.8, 16, 16);
+  const statueGeo = new THREE.SphereGeometry(1.5, 16, 16);
   const statueMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, roughness: 0.2, metalness: 0.8 });
   const statue = new THREE.Mesh(statueGeo, statueMat);
-  statue.position.set(0, 1.6, 14);
+  statue.position.set(0, 1.5, -10);
   rinkGroup.add(statue);
 
+  // Position the rink east of 30 Rock's base center
+  // The Lower Plaza is directly east of 30 Rock, between the building and the Channel Gardens
+  rinkGroup.position.set(50, 0, 0);
   scene.add(rinkGroup);
 
-  // Rink click target (invisible wider plane)
-  const rinkClickGeo = new THREE.CircleGeometry(rinkRadius + 1, 32);
+  // Rink click target
+  const rinkClickGeo = new THREE.PlaneGeometry(40, 22);
   const rinkClickMat = new THREE.MeshBasicMaterial({ visible: false });
   const rinkClick = new THREE.Mesh(rinkClickGeo, rinkClickMat);
   rinkClick.rotation.x = -Math.PI / 2;
-  rinkClick.position.set(0, -0.5, 22);
+  rinkClick.position.set(50, -1, 0);
   rinkClick.userData = {
     type: 'outdoor',
     floorId: 'OUT-RINK',
     floorNumber: -100,
-    areaName: 'Ice Skating Rink',
+    areaName: 'Lower Plaza — Ice Skating Rink',
     defaultMaterial: rinkClickMat,
   };
   scene.add(rinkClick);
   outdoorMeshes.push(rinkClick);
 
-  // Channel Gardens (walkway from 5th Ave to the rink)
-  const gardenGeo = new THREE.PlaneGeometry(8, 20);
-  const gardenMat = new THREE.MeshStandardMaterial({
-    color: 0x3a5a3a,
-    roughness: 0.9,
-  });
+  // ── Channel Gardens ──
+  // 60ft wide × 200ft long = 18m × 61m
+  // Runs east from the Lower Plaza toward 5th Avenue
+  const gardenGeo = new THREE.PlaneGeometry(18, 61);
+  const gardenMat = new THREE.MeshStandardMaterial({ color: 0x2a4a2a, roughness: 0.85 });
   const garden = new THREE.Mesh(gardenGeo, gardenMat);
   garden.rotation.x = -Math.PI / 2;
-  garden.position.set(0, 0.02, 40);
+  garden.position.set(100, 0.05, 0);
   garden.receiveShadow = true;
   garden.userData = {
     type: 'outdoor',
@@ -289,70 +381,79 @@ export function createBuilding(scene) {
   scene.add(garden);
   outdoorMeshes.push(garden);
 
+  // Garden walkway borders and plantings
+  const gardenBorderMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.6 });
+  for (const zSign of [-1, 1]) {
+    const border = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 61), gardenBorderMat);
+    border.position.set(100 + zSign * 9, 0.2, 0);
+    scene.add(border);
+  }
+
+  // Fountain pools along channel gardens (6 pools)
+  const poolMat = new THREE.MeshStandardMaterial({ color: 0x4488AA, roughness: 0.1, metalness: 0.2 });
+  for (let i = 0; i < 6; i++) {
+    const pool = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.3, 12), poolMat);
+    pool.position.set(100, 0.15, -25 + i * 10);
+    scene.add(pool);
+  }
+
   // Trees along Channel Gardens
   const treeMat = new THREE.MeshStandardMaterial({ color: 0x2a6a2a, roughness: 0.8 });
   const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3a1a, roughness: 0.9 });
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     for (const side of [-1, 1]) {
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 1.5, 6), trunkMat);
-      trunk.position.set(side * 3, 0.75, 32 + i * 3);
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 2.5, 6), trunkMat);
+      trunk.position.set(100 + side * 6, 1.25, -28 + i * 8);
       trunk.castShadow = true;
       scene.add(trunk);
 
-      const canopy = new THREE.Mesh(new THREE.ConeGeometry(1.0, 2.5, 8), treeMat);
-      canopy.position.set(side * 3, 2.8, 32 + i * 3);
+      const canopy = new THREE.Mesh(new THREE.SphereGeometry(1.8, 8, 6), treeMat);
+      canopy.position.set(100 + side * 6, 3.5, -28 + i * 8);
       canopy.castShadow = true;
       scene.add(canopy);
     }
   }
 
-  // Rockefeller Plaza event area (side of building)
-  const plazaGeo = new THREE.PlaneGeometry(25, 18);
-  const plazaMat = new THREE.MeshStandardMaterial({
-    color: 0x3a3a44,
-    roughness: 0.85,
-  });
+  // ── Rockefeller Plaza (private street area) ──
+  // Runs north-south along the west side of the buildings
+  const plazaGeo = new THREE.PlaneGeometry(16, 200);
+  const plazaMat = new THREE.MeshStandardMaterial({ color: 0x3a3a44, roughness: 0.85 });
   const plaza = new THREE.Mesh(plazaGeo, plazaMat);
   plaza.rotation.x = -Math.PI / 2;
-  plaza.position.set(-30, 0.02, 5);
+  plaza.position.set(-40, 0.03, 0);
   plaza.receiveShadow = true;
   plaza.userData = {
     type: 'outdoor',
     floorId: 'OUT-PLAZA',
     floorNumber: -102,
-    areaName: 'Rockefeller Plaza',
+    areaName: 'Rockefeller Plaza (Private Street)',
     defaultMaterial: plazaMat,
   };
   scene.add(plaza);
   outdoorMeshes.push(plaza);
 
-  // Plaza decorative elements (benches, lights)
-  const benchMat = new THREE.MeshStandardMaterial({ color: 0x666666, roughness: 0.6 });
-  for (let i = 0; i < 4; i++) {
-    const bench = new THREE.Mesh(new THREE.BoxGeometry(2, 0.4, 0.6), benchMat);
-    bench.position.set(-28 + i * 5, 0.2, 0);
-    bench.castShadow = true;
-    scene.add(bench);
-  }
-
-  // Lamp posts
-  const lampMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.5 });
-  const lampLightMat = new THREE.MeshStandardMaterial({ color: 0xFFEECC, emissive: 0xFFCC88, emissiveIntensity: 0.5 });
-  for (let i = 0; i < 3; i++) {
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 3.5, 6), lampMat);
-    pole.position.set(-25 + i * 8, 1.75, 12);
+  // ── Flagpoles along Rockefeller Plaza ──
+  const flagpoleMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.6, roughness: 0.3 });
+  const flagColors = [0xFF0000, 0x0000FF, 0x00AA00, 0xFFFF00, 0xFF6600, 0x9900FF, 0x00AAFF, 0xFF0066, 0x00FF88, 0xFFAA00];
+  for (let i = 0; i < 10; i++) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 8, 4), flagpoleMat);
+    pole.position.set(-40, 4, -40 + i * 8);
     scene.add(pole);
-    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), lampLightMat);
-    lamp.position.set(-25 + i * 8, 3.7, 12);
-    scene.add(lamp);
+
+    const flag = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.0, 1.2),
+      new THREE.MeshStandardMaterial({ color: flagColors[i], side: THREE.DoubleSide, roughness: 0.8 })
+    );
+    flag.position.set(-38.8, 7.2, -40 + i * 8);
+    scene.add(flag);
   }
 
-  // Sidewalk border around building base
-  const sidewalkGeo = new THREE.PlaneGeometry(55, 40);
-  const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x333340, roughness: 0.9 });
+  // Sidewalk around building base
+  const sidewalkGeo = new THREE.PlaneGeometry(80, 180);
+  const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x2e2e38, roughness: 0.9 });
   const sidewalk = new THREE.Mesh(sidewalkGeo, sidewalkMat);
   sidewalk.rotation.x = -Math.PI / 2;
-  sidewalk.position.set(0, 0.005, 3);
+  sidewalk.position.set(0, 0.01, 0);
   sidewalk.receiveShadow = true;
   scene.add(sidewalk);
 
@@ -371,13 +472,13 @@ export function setBasementsVisible(floorMeshes, visible) {
 
 export function getFloorYPosition(floorNumber) {
   if (floorNumber < 0) {
-    return floorNumber * FLOOR_HEIGHT + FLOOR_HEIGHT / 2;
+    return floorNumber * BASEMENT_H + BASEMENT_H / 2;
   } else if (floorNumber === 0) {
-    return LOBBY_HEIGHT / 2;
+    return LOBBY_H / 2;
   } else if (floorNumber === 71) {
-    const topFloorY = LOBBY_HEIGHT + 69 * FLOOR_HEIGHT + FLOOR_HEIGHT;
-    return topFloorY + FLOOR_HEIGHT * 1.5 / 2;
+    const topFloorY = LOBBY_H + 69 * FLOOR_H + FLOOR_H;
+    return topFloorY + FLOOR_H * 1.5 / 2;
   } else {
-    return LOBBY_HEIGHT + (floorNumber - 1) * FLOOR_HEIGHT + FLOOR_HEIGHT + FLOOR_HEIGHT / 2;
+    return LOBBY_H + (floorNumber - 1) * FLOOR_H + FLOOR_H / 2;
   }
 }
