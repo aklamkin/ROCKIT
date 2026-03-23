@@ -15,8 +15,8 @@ export function initScene(container) {
   container.appendChild(renderer.domElement);
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1e2030);
-  scene.fog = new THREE.FogExp2(0x1e2030, 0.0005);
+  scene.background = new THREE.Color(0x8AACCC);
+  scene.fog = new THREE.FogExp2(0x8AACCC, 0.0004);
 
   const aspect = container.clientWidth / container.clientHeight;
   camera = new THREE.PerspectiveCamera(45, aspect, 1, 3000);
@@ -31,12 +31,12 @@ export function initScene(container) {
   controls.target.set(0, 60, 0);
   controls.update();
 
-  // Lighting — warm daylight
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-  scene.add(new THREE.HemisphereLight(0x87CEEB, 0x555555, 0.45));
+  // Lighting — bright daylight matching Apple Maps look
+  scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+  scene.add(new THREE.HemisphereLight(0x9DC8E8, 0x665544, 0.5));
 
-  const sun = new THREE.DirectionalLight(0xfff5e6, 1.5);
-  sun.position.set(120, 300, 100);
+  const sun = new THREE.DirectionalLight(0xfff8ee, 1.6);
+  sun.position.set(150, 350, 120);
   sun.castShadow = true;
   sun.shadow.mapSize.set(4096, 4096);
   sun.shadow.camera.left = -350;
@@ -54,7 +54,7 @@ export function initScene(container) {
   // Ground plane (expanded for context buildings)
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(1200, 1200),
-    new THREE.MeshStandardMaterial({ color: 0x3A3A44, roughness: 0.9 })
+    new THREE.MeshStandardMaterial({ color: 0x4A4A50, roughness: 0.9 })
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.01;
